@@ -108,6 +108,9 @@ EMAIL_USER_PASSWORD=
 # Email FROM
 EMAIL_FROM=root@ghettoVCB
 
+# Email hostname
+EMAIL_HOST=
+
 # Comma seperated list of receiving email addresses
 EMAIL_TO=auroa@primp-industries.com
 
@@ -574,6 +577,7 @@ dumpVMConfigurations() {
         logger "info" "CONFIG - EMAIL_DELAY_INTERVAL = ${EMAIL_DELAY_INTERVAL}"
         logger "info" "CONFIG - EMAIL_FROM = ${EMAIL_FROM}"
         logger "info" "CONFIG - EMAIL_TO = ${EMAIL_TO}"
+        logger "info" "CONFIG - EMAIL_HOST = ${EMAIL_HOST}"
         logger "info" "CONFIG - WORKDIR_DEBUG = ${WORKDIR_DEBUG}"
     fi
     if [[ "${ENABLE_NFS_IO_HACK}" -eq 1 ]]; then
@@ -1481,10 +1485,17 @@ getFinalStatus() {
 
 buildHeaders() {
     EMAIL_ADDRESS=$1
-
-    echo -ne "HELO $(hostname -s)\r\n" > "${EMAIL_LOG_HEADER}"
+    if [[ ! -z "${EMAIL_HOST}" ]]; then
+        echo -ne "HELO ${EMAIL_HOST}\r\n" > "${EMAIL_LOG_HEADER}"
+    else
+        echo -ne "HELO $(hostname -s)\r\n" > "${EMAIL_LOG_HEADER}"
+    fi
     if [[ ! -z "${EMAIL_USER_NAME}" ]]; then
-        echo -ne "EHLO $(hostname -s)\r\n" >> "${EMAIL_LOG_HEADER}"
+        if [[ ! -z "${EMAIL_HOST}" ]]; then
+            echo -ne "EHLO ${EMAIL_HOST}\r\n" >> "${EMAIL_LOG_HEADER}"
+        else
+            echo -ne "EHLO $(hostname -s)\r\n" >> "${EMAIL_LOG_HEADER}"
+        fi
         echo -ne "AUTH LOGIN\r\n" >> "${EMAIL_LOG_HEADER}"
         echo -ne "$(echo -n "${EMAIL_USER_NAME}" |openssl base64 2>&1 |tail -1)\r\n" >> "${EMAIL_LOG_HEADER}"
         echo -ne "$(echo -n "${EMAIL_USER_PASSWORD}" |openssl base64 2>&1 |tail -1)\r\n" >> "${EMAIL_LOG_HEADER}"
